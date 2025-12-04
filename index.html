@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLBB Winrate Simulator</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #1c1c2e;
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+    .calculator {
+        background: #2e2e50;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        width: 350px;
+    }
+    h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #ff4757;
+    }
+    input, output {
+        width: 100%;
+        padding: 8px;
+        margin: 8px 0 16px 0;
+        border-radius: 6px;
+        border: none;
+        font-size: 16px;
+    }
+    input[type="range"] {
+        margin-top: 0;
+    }
+    button {
+        width: 100%;
+        padding: 10px;
+        background: #ff6b81;
+        color: white;
+        font-size: 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #ff4757;
+    }
+    .result {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 16px;
+        line-height: 1.6;
+        color: #1fff8b;
+    }
+    h6 {
+        
+        width: 40%;
+        padding: 5px;
+        background: #b42424;
+        color: white;
+        font-size: 10px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        
+    }
+</style>
+</head>
+<body>
+<div class="calculator">
+    <h2>MLBB Winrate Simulator</h2>
+    <input type="number" id="matches" placeholder="Current Number of Matches" min="1">
+    <input type="number" id="currentWinrate" placeholder="Current Winrate (%)" min="0" max="100" oninput="limitWinrate(this)">
+    <input type="number" id="desiredWinrate" placeholder="Desired Winrate (%)" min="0" max="100" oninput="limitWinrate(this)">
+    <button onclick="calculateNeededWins()">Calculate Needed Wins</button>
+    
+    <div class="result" id="result"></div>
+
+    <label for="extraWins">Simulate Extra Wins: <span id="sliderValue">0</span></label>
+    <input type="range" id="extraWins" min="0" max="1000" value="0" oninput="updateWinrate()">
+    <div class="result" id="simulation"></div>
+    
+    <h6>Created by: Christian Achera</h6>
+    
+</div>
+
+<script>
+let matches = 0;
+let currentWins = 0;
+
+// Strictly limit winrate to 0-100
+function limitWinrate(input) {
+    if (input.value > 100) input.value = 100;
+    if (input.value < 0) input.value = 0;
+}
+
+function calculateNeededWins() {
+    matches = parseInt(document.getElementById('matches').value);
+    let currentWinrate = parseFloat(document.getElementById('currentWinrate').value);
+    let desiredWinrate = parseFloat(document.getElementById('desiredWinrate').value);
+    const resultDiv = document.getElementById('result');
+    const slider = document.getElementById('extraWins');
+
+    if(isNaN(matches) || isNaN(currentWinrate) || isNaN(desiredWinrate) || matches <= 0) {
+        resultDiv.innerHTML = "Please enter valid numbers.";
+        return;
+    }
+
+    if(desiredWinrate <= currentWinrate) {
+        resultDiv.innerHTML = "Your current winrate is already above or equal to your desired winrate.";
+        return;
+    }
+
+    currentWins = (currentWinrate / 100) * matches;
+
+    // Calculate needed consecutive wins to reach desired winrate
+    const neededWins = Math.ceil(((desiredWinrate/100) * matches - currentWins) / (1 - desiredWinrate/100));
+    const newTotalMatches = matches + neededWins;
+    const newWinrate = Math.min(((currentWins + neededWins) / newTotalMatches * 100), 100).toFixed(2);
+
+    resultDiv.innerHTML = `
+        You need <strong>${neededWins}</strong> consecutive wins to reach ${desiredWinrate}%.<br>
+        Your new total matches will be <strong>${newTotalMatches}</strong>.<br>
+        Your new winrate will be <strong>${newWinrate}%</strong>.
+    `;
+
+    slider.max = 1000;
+    slider.value = 0;
+    document.getElementById('sliderValue').innerText = 0;
+    document.getElementById('simulation').innerHTML = "";
+}
+
+function updateWinrate() {
+    const extraWins = parseInt(document.getElementById('extraWins').value);
+    document.getElementById('sliderValue').innerText = extraWins;
+
+    if(matches === 0) return;
+
+    const newTotalMatches = matches + extraWins;
+    let newWinrate = ((currentWins + extraWins) / newTotalMatches * 100);
+    newWinrate = Math.min(newWinrate, 100).toFixed(2); // cap at 100%
+
+    document.getElementById('simulation').innerHTML = `
+        With <strong>${extraWins}</strong> extra wins:<br>
+        Total matches: <strong>${newTotalMatches}</strong><br>
+        New winrate: <strong>${newWinrate}%</strong>
+    `;
+}
+</script>
+</body>
+</html>
